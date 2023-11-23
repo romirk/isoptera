@@ -15,18 +15,32 @@ DIRECTIONS = {
 }
 
 TURN = {
-    0:  # no turn
+    1:  # no turn
         np.array((0, 0), dtype=np.int16),
-    1:  # turn right
+    2:  # turn right
         np.array((1, 0), dtype=np.int16),
-    2:  # turn around
+    4:  # turn around
         np.array((2, 0), dtype=np.int16),
     8:  # turn left
         np.array((3, 0), dtype=np.int16),
 }
 
+ORIENTATION_TO_STR = {
+    0: "north",
+    1: "east",
+    2: "south",
+    3: "west",
+}
+
 EXPANDING_FRAME = [[[1, 8, 0], [1, 2, 1]], [[0, 2, 0], [0, 8, 1]]]
-CHAOS = [[[1, 1, 0], [1, 1, 1]], [[0, 0, 0], [0, 0, 1]]]
+CHAOS = [[[1, 2, 0], [1, 2, 1]], [[0, 1, 0], [0, 1, 1]]]
+FIB_SPIRAL = [[[1, 8, 1], [1, 8, 1]], [[1, 2, 1], [0, 1, 0]]]
+TEXTURED = [[[1, 2, 1], [1, 8, 1]], [[1, 2, 1], [0, 2, 0]]]
+DIAMOND = [[[0, 1, 1], [0, 2, 1]], [[1, 8, 0], [0, 1, 1]]]
+SPIRAL = [[[1, 1, 1], [1, 8, 0]], [[1, 2, 1], [0, 1, 0]]]
+BINARY_COUNTER = [[[1, 2, 0], [0, 1, 0]]]
+# noinspection SpellCheckingInspection
+LANGTONS_ANT = [[[1, 2, 0], [0, 8, 0]]]
 
 
 class Isoptera(TuringMachine):
@@ -38,6 +52,7 @@ class Isoptera(TuringMachine):
 
         # make the center of the tape the current position
         self.pos = np.array((width // 2, height // 2), dtype=np.int16)
+        # 0: north, 1: east, 2: south, 3: west
         self.orientation = 0
 
         # initialize the state
@@ -52,27 +67,36 @@ class Isoptera(TuringMachine):
         # initialize the transition function as an ndarray
         self.delta: np.ndarray = np.array(states, dtype=np.int16)
 
+    def print_delta(self):
+        print("     0       1")
+        for i in range(self.delta.shape[0]):
+            print(f"{i} ", end="")
+            for j in range(self.delta.shape[1]):
+                print(f"{self.delta[i, j]} ", end="")
+            print()
+
     def step(self):
         if self.q in self.F:
             # halt
             raise StopIteration
 
         # get current symbol
-        symbol = self.tape[*self.pos]
+        cur_symbol = self.tape[*self.pos]
+        old_q = self.q
 
         # get transition
-        t = self.delta[self.q, symbol]
+        t = self.delta[old_q, cur_symbol]
         symbol: int = t[0]
         turn: int = t[1]
         self.q = t[2]
 
         # turn
         match turn:
-            case 0:
-                pass
             case 1:
-                self.orientation = (self.orientation + 1) % 4
+                pass
             case 2:
+                self.orientation = (self.orientation + 1) % 4
+            case 4:
                 self.orientation = (self.orientation + 2) % 4
             case 8:
                 self.orientation = (self.orientation + 3) % 4
@@ -83,16 +107,17 @@ class Isoptera(TuringMachine):
         # move
         match self.orientation:
             case 0:
-                self.pos[1] -= 1
-            case 1:
-                self.pos[0] += 1
-            case 2:
-                self.pos[1] += 1
-            case 3:
                 self.pos[0] -= 1
+            case 1:
+                self.pos[1] += 1
+            case 2:
+                self.pos[0] += 1
+            case 3:
+                self.pos[1] -= 1
 
         # wrap around
         self.pos %= self.tape.shape
+        # print(f"delta[{old_q}, {cur_symbol}] = {t}\n{self.pos} {ORIENTATION_TO_STR[self.orientation]}\n")
 
     def __iter__(self):
         return self
@@ -117,19 +142,30 @@ class Isoptera(TuringMachine):
 
 
 if __name__ == '__main__':
-    iso = Isoptera(200, 200, CHAOS, 0, 2)
-    for i in range(10000):
-        # print(iso)
+    iso = Isoptera(200, 200, FIB_SPIRAL, 0, 2)
+    iso.print_delta()
+
+    ipf = 15
+    fps = 30
+    iterations = 10211
+
+    out = cv2.VideoWriter("isoptera.mp4", cv2.VideoWriter_fourcc(*"MP4V"), fps, (800, 800))
+    for i in range(iterations):
         iso.step()
-        # if i % 1000:
-        #     continue
+
+        if i % ipf:
+            continue
+
         img = np.ones((iso.tape.shape[0], iso.tape.shape[1], 3), dtype=np.uint8) * 255
         img[iso.tape == 1] = (0, 0, 0)
         img[iso.pos[0], iso.pos[1]] = (0, 0, 255)
         img = cv2.resize(img, (800, 800), interpolation=cv2.INTER_NEAREST)
+        out.write(img)
         cv2.imshow("isoptera", img)
-        cv2.waitKey(1)
+        if cv2.waitKey(1) == ord('q'):
+            break
 
+    out.release()
     img = np.zeros((iso.tape.shape[0], iso.tape.shape[1], 3), dtype=np.uint8)
     img[iso.tape == 1] = (255, 255, 255)
     img[iso.pos[0], iso.pos[1]] = (0, 0, 255)
