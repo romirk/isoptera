@@ -1,11 +1,8 @@
-from datetime import datetime, timedelta
-from time import sleep, time
+from time import time
 
 import cv2
 import numpy as np
 import tqdm
-
-from tm import TuringMachine
 
 DIRECTIONS = {
     0:  # north
@@ -61,7 +58,7 @@ ISOPTERA = {
 }
 
 
-class Isoptera(TuringMachine):
+class Isoptera:
     def __init__(self, width: int, height: int, states: list[list[list[int]]],
                  start: int, blank: int = 0):
         super().__init__()
@@ -81,6 +78,7 @@ class Isoptera(TuringMachine):
         self.Gamma = {0, 1}
         self.Q = range(len(states))
         self.q = self.Q[self.q0]
+        self.F = {}
 
         # initialize the transition function as an ndarray
         self.delta: np.ndarray = np.array(states, dtype=np.int16)
@@ -197,6 +195,6 @@ class Isoptera(TuringMachine):
         img = np.zeros((self.tape.shape[0], self.tape.shape[1], 3), dtype=np.uint8)
         img[self.tape == 1] = (255, 255, 255)
         img[self.pos[0], self.pos[1]] = (0, 0, 255)
-        img = cv2.resize(img, (800, 800), interpolation=cv2.INTER_NEAREST)
+        img = cv2.resize(img, (500, 500), interpolation=cv2.INTER_NEAREST)
         cv2.imshow("isoptera", img)
         cv2.waitKey(0)
