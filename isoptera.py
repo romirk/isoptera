@@ -1,3 +1,5 @@
+from time import sleep
+
 import cv2
 import numpy as np
 
@@ -142,14 +144,14 @@ class Isoptera(TuringMachine):
 
 
 if __name__ == '__main__':
-    iso = Isoptera(200, 200, FIB_SPIRAL, 0, 2)
+    iso = Isoptera(200, 200, EXPANDING_FRAME, 0, 2)
     iso.print_delta()
 
-    ipf = 15
+    ipf = 10
     fps = 30
     iterations = 10211
 
-    out = cv2.VideoWriter("isoptera.mp4", cv2.VideoWriter_fourcc(*"MP4V"), fps, (800, 800))
+    # out = cv2.VideoWriter("isoptera.mp4", cv2.VideoWriter_fourcc(*"MP4V"), fps, (800, 800))
     for i in range(iterations):
         iso.step()
 
@@ -160,12 +162,13 @@ if __name__ == '__main__':
         img[iso.tape == 1] = (0, 0, 0)
         img[iso.pos[0], iso.pos[1]] = (0, 0, 255)
         img = cv2.resize(img, (800, 800), interpolation=cv2.INTER_NEAREST)
-        out.write(img)
+        # out.write(img)
         cv2.imshow("isoptera", img)
         if cv2.waitKey(1) == ord('q'):
             break
+        sleep(1 / fps)
 
-    out.release()
+    # out.release()
     img = np.zeros((iso.tape.shape[0], iso.tape.shape[1], 3), dtype=np.uint8)
     img[iso.tape == 1] = (255, 255, 255)
     img[iso.pos[0], iso.pos[1]] = (0, 0, 255)
