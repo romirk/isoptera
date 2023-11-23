@@ -123,16 +123,16 @@ if __name__ == '__main__':
         iso.step()
         # if i % 1000:
         #     continue
-        img = np.zeros((iso.tape.shape[0], iso.tape.shape[1], 3), dtype=np.uint8)
-        img[iso.tape == 1] = (255, 255, 255)
+        img = np.ones((iso.tape.shape[0], iso.tape.shape[1], 3), dtype=np.uint8) * 255
+        img[iso.tape == 1] = (0, 0, 0)
         img[iso.pos[0], iso.pos[1]] = (0, 0, 255)
-        img = cv2.resize(img, (800, 800))
+        img = cv2.resize(img, (800, 800), interpolation=cv2.INTER_NEAREST)
         cv2.imshow("isoptera", img)
         cv2.waitKey(1)
 
     img = np.zeros((iso.tape.shape[0], iso.tape.shape[1], 3), dtype=np.uint8)
     img[iso.tape == 1] = (255, 255, 255)
     img[iso.pos[0], iso.pos[1]] = (0, 0, 255)
-    img = cv2.resize(img, (800, 800))
+    img = cv2.resize(img, (800, 800), interpolation=cv2.INTER_NEAREST)
     cv2.imshow("isoptera", img)
     cv2.waitKey(0)
